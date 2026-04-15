@@ -32,7 +32,7 @@ describe("core/validators", () => {
       return
     }
 
-    expect(() => assertTaskId(input)).toThrow("Invalid task id. Expected format t_xxxxxx")
+    expect(() => assertTaskId(input)).toThrow("Invalid task id. Expected format t_000000")
   })
 
   it.each([

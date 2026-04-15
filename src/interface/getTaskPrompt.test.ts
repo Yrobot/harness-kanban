@@ -22,7 +22,7 @@ describe("interface/getTaskPrompt", () => {
 
   it("injects dependency result_summary", async () => {
     const dependency = await createTask({ req: "20260101120000", title: "先做A" }, { cwd })
-    await updateTask(dependency.id, { summary: "A 已完成" }, { cwd })
+    await updateTask(dependency.id, "20260101120000", { summary: "A 已完成" }, { cwd })
 
     const current = await createTask(
       {
@@ -35,7 +35,7 @@ describe("interface/getTaskPrompt", () => {
       { cwd },
     )
 
-    const prompt = await getTaskPrompt(current.id, { cwd })
+    const prompt = await getTaskPrompt(current.id, "20260101120000", { cwd })
 
     expect(prompt).toContain("## 需求背景")
     expect(prompt).toContain("## 当前任务")
@@ -48,7 +48,7 @@ describe("interface/getTaskPrompt", () => {
     const dependency = await createTask({ req: "20260101120000", title: "先做A" }, { cwd })
     const current = await createTask({ req: "20260101120000", title: "再做B", dependencies: [dependency.id] }, { cwd })
 
-    const prompt = await getTaskPrompt(current.id, { cwd })
+    const prompt = await getTaskPrompt(current.id, "20260101120000", { cwd })
 
     expect(prompt).toContain(`依赖任务 ${dependency.id} 暂无 result_summary`)
   })

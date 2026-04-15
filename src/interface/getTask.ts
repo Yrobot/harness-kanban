@@ -1,15 +1,16 @@
-import { findTaskWithRequirement } from "@/core/storage.js"
+import { findTaskInRequirement, readRequirement } from "@/core/storage.js"
 import { assertTaskId } from "@/core/validators.js"
 import type { CommandContext, Task } from "@/core/types.js"
 
-export async function getTask(taskId: string, context: CommandContext = {}): Promise<Task> {
+export async function getTask(taskId: string, reqId: string, context: CommandContext = {}): Promise<Task> {
   assertTaskId(taskId)
 
-  const found = await findTaskWithRequirement(context, taskId)
+  const requirement = await readRequirement(context, reqId)
+  const task = findTaskInRequirement(requirement, taskId)
 
-  if (!found) {
+  if (!task) {
     throw new Error(`Task not found: ${taskId}`)
   }
 
-  return found.task
+  return task
 }

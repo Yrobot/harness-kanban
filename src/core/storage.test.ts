@@ -4,6 +4,7 @@ import path from "node:path"
 
 import {
   deleteRequirementById,
+  findTaskInRequirement,
   findTaskWithRequirement,
   listRequirements,
   readRequirement,
@@ -70,6 +71,15 @@ describe("core/storage", () => {
     const found = await findTaskWithRequirement({ cwd }, "t_000001")
     expect(found?.requirement.id).toBe("20260101120000")
     expect(found?.task.id).toBe("t_000001")
+  })
+
+  it("finds task in a given requirement", async () => {
+    const req = buildRequirement("20260101120000", "A")
+    await saveRequirement({ cwd }, req)
+
+    const read = await readRequirement({ cwd }, "20260101120000")
+    expect(findTaskInRequirement(read, "t_000001")?.id).toBe("t_000001")
+    expect(findTaskInRequirement(read, "t_nonexistent")).toBeUndefined()
   })
 
   it("deletes requirement directory", async () => {

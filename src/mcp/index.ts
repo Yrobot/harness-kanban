@@ -12,6 +12,7 @@ import {
   getTaskPrompt,
   listReq,
   listTask,
+  updateReq,
   updateTask,
 } from "@/interface/index.js"
 import type {
@@ -73,6 +74,29 @@ server.tool(
 )
 
 server.tool(
+  "update-req",
+  {
+    id: z.string(),
+    status: z.enum(["planning", "developing", "completed"]).optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    global: z.boolean().optional(),
+  },
+  async (input) =>
+    asText(
+      await updateReq(
+        input.id,
+        {
+          status: input.status,
+          title: input.title,
+          description: input.description,
+        },
+        getContext(input.global),
+      ),
+    ),
+)
+
+server.tool(
   "delete-req",
   {
     id: z.string(),
@@ -126,15 +150,19 @@ server.tool(
   "get-task",
   {
     id: z.string(),
+    req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await getTask(input.id, getContext(input.global))),
+  async (input) => ({
+    content: [{ type: "text", text: JSON.stringify(await getTask(input.id, input.req, getContext(input.global)), null, 2) }],
+  }),
 )
 
 server.tool(
   "update-task",
   {
     id: z.string(),
+    req: z.string(),
     status: z.enum(["todo", "in_progress", "done", "blocked"]).optional(),
     summary: z.string().optional(),
     set: z.record(z.unknown()).optional(),
@@ -150,6 +178,7 @@ server.tool(
     return asText(
       await updateTask(
         input.id,
+        input.req,
         {
           status: input.status,
           summary: input.summary,
@@ -167,18 +196,22 @@ server.tool(
   "delete-task",
   {
     id: z.string(),
+    req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await deleteTask(input.id, getContext(input.global))),
+  async (input) => asText(await deleteTask(input.id, input.req, getContext(input.global))),
 )
 
 server.tool(
   "get-task-prompt",
   {
     id: z.string(),
+    req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await getTaskPrompt(input.id, getContext(input.global))),
+  async (input) => ({
+    content: [{ type: "text", text: await getTaskPrompt(input.id, input.req, getContext(input.global)) }],
+  }),
 )
 
 export async function startServer(): Promise<void> {

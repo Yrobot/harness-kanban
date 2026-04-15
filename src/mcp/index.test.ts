@@ -37,6 +37,7 @@ describe("mcp/index", () => {
         "create-req",
         "list-req",
         "get-req",
+        "update-req",
         "delete-req",
         "create-task",
         "list-task",
@@ -49,6 +50,35 @@ describe("mcp/index", () => {
       expect(Object.keys(tools)).toEqual(expected)
     })
 
+    describe("update-req schema", () => {
+      const updateReqTool = tools["update-req"] as {
+        inputSchema: {
+          safeParse: (v: unknown) => { success: boolean }
+        }
+      }
+
+      it("accepts valid status enum values", () => {
+        const parse = updateReqTool.inputSchema.safeParse({
+          id: "20260101120000",
+          status: "completed",
+        })
+        expect(parse.success).toBe(true)
+      })
+
+      it("rejects invalid status", () => {
+        const parse = updateReqTool.inputSchema.safeParse({
+          id: "20260101120000",
+          status: "invalid",
+        })
+        expect(parse.success).toBe(false)
+      })
+
+      it("requires id", () => {
+        const parse = updateReqTool.inputSchema.safeParse({ status: "completed" })
+        expect(parse.success).toBe(false)
+      })
+    })
+
     describe("update-task schema", () => {
       const updateTool = tools["update-task"] as {
         inputSchema: {
@@ -59,6 +89,7 @@ describe("mcp/index", () => {
       it("accepts valid status enum values", () => {
         const parse = updateTool.inputSchema.safeParse({
           id: "t_000001",
+          req: "20260101120000",
           status: "done",
         })
         expect(parse.success).toBe(true)
@@ -67,6 +98,7 @@ describe("mcp/index", () => {
       it("rejects invalid status", () => {
         const parse = updateTool.inputSchema.safeParse({
           id: "t_000001",
+          req: "20260101120000",
           status: "invalid",
         })
         expect(parse.success).toBe(false)
@@ -75,6 +107,7 @@ describe("mcp/index", () => {
       it("accepts set/add/remove as records", () => {
         const parse = updateTool.inputSchema.safeParse({
           id: "t_000001",
+          req: "20260101120000",
           set: { title: "new" },
           add: { constraints: ["c1"] },
           remove: { context_mapping: ["src/a"] },
@@ -93,6 +126,60 @@ describe("mcp/index", () => {
       it("requires id", () => {
         const parse = updateTool.inputSchema.safeParse({ status: "done" })
         expect(parse.success).toBe(false)
+      })
+    })
+
+    describe("get-task schema", () => {
+      const getTaskTool = tools["get-task"] as {
+        inputSchema: {
+          safeParse: (v: unknown) => { success: boolean }
+        }
+      }
+
+      it("requires req", () => {
+        const parse = getTaskTool.inputSchema.safeParse({ id: "t_000001" })
+        expect(parse.success).toBe(false)
+      })
+
+      it("accepts with req", () => {
+        const parse = getTaskTool.inputSchema.safeParse({ id: "t_000001", req: "20260101120000" })
+        expect(parse.success).toBe(true)
+      })
+    })
+
+    describe("delete-task schema", () => {
+      const deleteTaskTool = tools["delete-task"] as {
+        inputSchema: {
+          safeParse: (v: unknown) => { success: boolean }
+        }
+      }
+
+      it("requires req", () => {
+        const parse = deleteTaskTool.inputSchema.safeParse({ id: "t_000001" })
+        expect(parse.success).toBe(false)
+      })
+
+      it("accepts with req", () => {
+        const parse = deleteTaskTool.inputSchema.safeParse({ id: "t_000001", req: "20260101120000" })
+        expect(parse.success).toBe(true)
+      })
+    })
+
+    describe("get-task-prompt schema", () => {
+      const getTaskPromptTool = tools["get-task-prompt"] as {
+        inputSchema: {
+          safeParse: (v: unknown) => { success: boolean }
+        }
+      }
+
+      it("requires req", () => {
+        const parse = getTaskPromptTool.inputSchema.safeParse({ id: "t_000001" })
+        expect(parse.success).toBe(false)
+      })
+
+      it("accepts with req", () => {
+        const parse = getTaskPromptTool.inputSchema.safeParse({ id: "t_000001", req: "20260101120000" })
+        expect(parse.success).toBe(true)
       })
     })
   })

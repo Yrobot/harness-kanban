@@ -1,4 +1,4 @@
-import { findTaskWithRequirement } from "@/core/storage.js"
+import { findTaskInRequirement, readRequirement } from "@/core/storage.js"
 import { assertTaskId } from "@/core/validators.js"
 import type { CommandContext } from "@/core/types.js"
 
@@ -20,27 +20,30 @@ function buildDependencySection(dependencySummaries: string[]): string {
     .join("\n\n")
 }
 
-export async function getTaskPrompt(taskId: string, context: CommandContext = {}): Promise<string> {
+export async function getTaskPrompt(
+  taskId: string,
+  reqId: string,
+  context: CommandContext = {},
+): Promise<string> {
   assertTaskId(taskId)
 
-  const found = await findTaskWithRequirement(context, taskId)
-  if (!found) {
+  const requirement = await readRequirement(context, reqId)
+  const task = findTaskInRequirement(requirement, taskId)
+  if (!task) {
     throw new Error(`Task not found: ${taskId}`)
   }
-
-  const { requirement, task } = found
 
   const dependencySummaries: string[] = []
 
   for (const dependencyId of task.dependencies) {
-    const dependency = await findTaskWithRequirement(context, dependencyId)
+    const dependency = findTaskInRequirement(requirement, dependencyId)
     if (!dependency) {
       dependencySummaries.push(`依赖任务 ${dependencyId} 不存在`)
       continue
     }
 
     dependencySummaries.push(
-      dependency.task.result_summary ?? `依赖任务 ${dependencyId} 暂无 result_summary`,
+      dependency.result_summary ?? `依赖任务 ${dependencyId} 暂无 result_summary`,
     )
   }
 

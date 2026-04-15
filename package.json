@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "test": "bun test",
     "ts-check": "npx tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
@@ -30,6 +30,7 @@
     "@types/bun": "^1.3.12",
     "@types/node": "^24.0.0",
     "@types/yargs": "^17.0.33",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.8.3"
   }
 }

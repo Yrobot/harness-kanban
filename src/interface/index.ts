@@ -1,6 +1,7 @@
 export { createReq } from "./createReq.js"
 export { listReq } from "./listReq.js"
 export { getReq } from "./getReq.js"
+export { updateReq } from "./updateReq.js"
 export { deleteReq } from "./deleteReq.js"
 export { createTask } from "./createTask.js"
 export { listTask } from "./listTask.js"

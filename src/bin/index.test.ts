@@ -56,25 +56,16 @@ describe("bin/index", () => {
     expect(stderr).toContain("Requirement not found")
   })
 
-  it("update-task with JSON object parameters", async () => {
+  it("update-req reports missing requirement", async () => {
     const { stderr, exitCode } = await runCliAsync([
-      "update-task",
-      "t_000001",
+      "update-req",
+      "20260101120000",
       "--status",
-      "done",
-      "--summary",
-      "完成",
-      "--set",
-      '{"background_chunk":"bg"}',
-      "--add",
-      '{"constraints":["c2"]}',
-      "--remove",
-      '{"constraints":["c1"]}',
+      "completed",
     ])
 
-    // Will fail because task doesn't exist, but we verify JSON parsing
     expect(exitCode).toBe(1)
-    expect(stderr).toContain("Task not found")
+    expect(stderr).toContain("Requirement not found: 20260101120000")
   })
 
   it("strict() rejects unknown commands", async () => {
@@ -91,6 +82,30 @@ describe("bin/index", () => {
 
   it("list-task without --req shows error", async () => {
     const { exitCode, stderr } = await runCliAsync(["list-task"])
+    expect(exitCode).toBe(1)
+    expect(stderr.length).toBeGreaterThan(0)
+  })
+
+  it("get-task without --req shows error", async () => {
+    const { exitCode, stderr } = await runCliAsync(["get-task", "t_000001"])
+    expect(exitCode).toBe(1)
+    expect(stderr.length).toBeGreaterThan(0)
+  })
+
+  it("update-task without --req shows error", async () => {
+    const { exitCode, stderr } = await runCliAsync(["update-task", "t_000001", "--status", "done"])
+    expect(exitCode).toBe(1)
+    expect(stderr.length).toBeGreaterThan(0)
+  })
+
+  it("delete-task without --req shows error", async () => {
+    const { exitCode, stderr } = await runCliAsync(["delete-task", "t_000001"])
+    expect(exitCode).toBe(1)
+    expect(stderr.length).toBeGreaterThan(0)
+  })
+
+  it("get-task-prompt without --req shows error", async () => {
+    const { exitCode, stderr } = await runCliAsync(["get-task-prompt", "t_000001"])
     expect(exitCode).toBe(1)
     expect(stderr.length).toBeGreaterThan(0)
   })

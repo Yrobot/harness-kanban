@@ -1,4 +1,4 @@
-import { findTaskWithRequirement, saveRequirement } from "@/core/storage.js"
+import { findTaskInRequirement, readRequirement, saveRequirement } from "@/core/storage.js"
 import { assertTaskId, assertTaskStatus } from "@/core/validators.js"
 import type {
   CommandContext,
@@ -62,17 +62,17 @@ function applyRemove(task: Task, removePayload: UpdateTaskRemovePayload | undefi
 
 export async function updateTask(
   taskId: string,
+  reqId: string,
   input: UpdateTaskInput,
   context: CommandContext = {},
 ): Promise<Task> {
   assertTaskId(taskId)
 
-  const found = await findTaskWithRequirement(context, taskId)
-  if (!found) {
+  const requirement = await readRequirement(context, reqId)
+  const task = findTaskInRequirement(requirement, taskId)
+  if (!task) {
     throw new Error(`Task not found: ${taskId}`)
   }
-
-  const { requirement, task } = found
 
   let updatedTask = { ...task }
 

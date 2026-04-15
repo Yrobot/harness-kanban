@@ -35,7 +35,7 @@ describe("interface/task", () => {
 
     expect(created.id).toBe("t_000001")
 
-    const got = await getTask(created.id, { cwd })
+    const got = await getTask(created.id, "20260101120000", { cwd })
     expect(got.title).toBe("API 开发")
     expect(got.verification_steps).toEqual(["bun test"])
   })
@@ -46,7 +46,7 @@ describe("interface/task", () => {
       { cwd },
     )
 
-    await updateTask(created.id, { status: "done" }, { cwd })
+    await updateTask(created.id, "20260101120000", { status: "done" }, { cwd })
 
     const doneTasks = await listTask({ req: "20260101120000", status: "done" }, { cwd })
     const todoTasks = await listTask({ req: "20260101120000", status: "todo" }, { cwd })
@@ -68,6 +68,7 @@ describe("interface/task", () => {
 
     const updated = await updateTask(
       created.id,
+      "20260101120000",
       {
         summary: "完成接口",
         set: { background_chunk: "背景", verification_steps: ["bun test"] },
@@ -87,9 +88,9 @@ describe("interface/task", () => {
   it("deletes task", async () => {
     const created = await createTask({ req: "20260101120000", title: "任务 A" }, { cwd })
 
-    const deleted = await deleteTask(created.id, { cwd })
+    const deleted = await deleteTask(created.id, "20260101120000", { cwd })
     expect(deleted).toEqual({ id: created.id, req_id: "20260101120000", deleted: true })
 
-    await expect(getTask(created.id, { cwd })).rejects.toThrow(`Task not found: ${created.id}`)
+    await expect(getTask(created.id, "20260101120000", { cwd })).rejects.toThrow(`Task not found: ${created.id}`)
   })
 })

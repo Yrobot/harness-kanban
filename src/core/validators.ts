@@ -12,7 +12,7 @@ export function assertReqId(reqId: string): void {
 
 export function assertTaskId(taskId: string): void {
   if (!isTaskId(taskId)) {
-    throw new Error("Invalid task id. Expected format t_xxxxxx")
+    throw new Error("Invalid task id. Expected format t_000000")
   }
 }
 

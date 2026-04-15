@@ -12,10 +12,12 @@ import {
   getTaskPrompt,
   listReq,
   listTask,
+  updateReq,
   updateTask,
 } from "@/interface/index.js"
 import type {
   CommandContext,
+  RequirementStatus,
   TaskStatus,
   UpdateTaskAddPayload,
   UpdateTaskRemovePayload,
@@ -62,9 +64,19 @@ function getOptionalStatus(argv: AnyArgv): TaskStatus | undefined {
   return status as TaskStatus
 }
 
+function getOptionalReqStatus(argv: AnyArgv): RequirementStatus | undefined {
+  const status = getOptionalString(argv, "status")
+  if (!status) {
+    return undefined
+  }
+
+  return status as RequirementStatus
+}
+
 export async function run(argvInput: string[] = hideBin(process.argv)): Promise<void> {
   await yargs(argvInput)
-    .scriptName("harness-kanban")
+    .usage("harness-kanban <command>")
+    .scriptName("")
     .option("global", {
       alias: "g",
       type: "boolean",
@@ -115,6 +127,28 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
       },
     )
     .command(
+      "update-req <id>",
+      "Update requirement",
+      (builder: Argv) =>
+        builder
+          .positional("id", { type: "string", describe: "Requirement id" })
+          .option("status", { type: "string", describe: "planning|developing|completed" })
+          .option("title", { type: "string", describe: "Requirement title" })
+          .option("description", { type: "string", describe: "Requirement description" }),
+      async (argv: AnyArgv) => {
+        const result = await updateReq(
+          getRequiredString(argv, "id"),
+          {
+            status: getOptionalReqStatus(argv),
+            title: getOptionalString(argv, "title"),
+            description: getOptionalString(argv, "description"),
+          },
+          getContext(argv),
+        )
+        printJson(result)
+      },
+    )
+    .command(
       "delete-req <id>",
       "Delete requirement",
       (builder: Argv) => builder.positional("id", { type: "string", describe: "Requirement id" }),
@@ -128,7 +162,7 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
       "Create task under requirement",
       (builder: Argv) =>
         builder
-          .option("id", { type: "string", describe: "Task id (t_xxxxxx)" })
+          .option("id", { type: "string", describe: "Task id (t_000000)" })
           .option("req", { type: "string", demandOption: true, describe: "Requirement id" })
           .option("title", { type: "string", demandOption: true, describe: "Task title" })
           .option("context", { type: "string", describe: "JSON array or comma string" })
@@ -174,9 +208,12 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
     .command(
       "get-task <id>",
       "Get task details",
-      (builder: Argv) => builder.positional("id", { type: "string", describe: "Task id" }),
+      (builder: Argv) =>
+        builder
+          .positional("id", { type: "string", describe: "Task id" })
+          .option("req", { type: "string", demandOption: true, describe: "Requirement id" }),
       async (argv: AnyArgv) => {
-        const result = await getTask(getRequiredString(argv, "id"), getContext(argv))
+        const result = await getTask(getRequiredString(argv, "id"), getRequiredString(argv, "req"), getContext(argv))
         printJson(result)
       },
     )
@@ -186,6 +223,7 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
       (builder: Argv) =>
         builder
           .positional("id", { type: "string", describe: "Task id" })
+          .option("req", { type: "string", demandOption: true, describe: "Requirement id" })
           .option("status", { type: "string", describe: "todo|in_progress|done|blocked" })
           .option("summary", { type: "string", describe: "Task result summary" })
           .option("set", { type: "string", describe: "JSON object" })
@@ -198,6 +236,7 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
 
         const result = await updateTask(
           getRequiredString(argv, "id"),
+          getRequiredString(argv, "req"),
           {
             status: getOptionalStatus(argv),
             summary: getOptionalString(argv, "summary"),
@@ -213,18 +252,24 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
     .command(
       "delete-task <id>",
       "Delete task",
-      (builder: Argv) => builder.positional("id", { type: "string", describe: "Task id" }),
+      (builder: Argv) =>
+        builder
+          .positional("id", { type: "string", describe: "Task id" })
+          .option("req", { type: "string", demandOption: true, describe: "Requirement id" }),
       async (argv: AnyArgv) => {
-        const result = await deleteTask(getRequiredString(argv, "id"), getContext(argv))
+        const result = await deleteTask(getRequiredString(argv, "id"), getRequiredString(argv, "req"), getContext(argv))
         printJson(result)
       },
     )
     .command(
       "get-task-prompt <id>",
       "Generate deterministic task prompt",
-      (builder: Argv) => builder.positional("id", { type: "string", describe: "Task id" }),
+      (builder: Argv) =>
+        builder
+          .positional("id", { type: "string", describe: "Task id" })
+          .option("req", { type: "string", demandOption: true, describe: "Requirement id" }),
       async (argv: AnyArgv) => {
-        const result = await getTaskPrompt(getRequiredString(argv, "id"), getContext(argv))
+        const result = await getTaskPrompt(getRequiredString(argv, "id"), getRequiredString(argv, "req"), getContext(argv))
         process.stdout.write(`${result}\n`)
       },
     )

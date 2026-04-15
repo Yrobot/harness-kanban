@@ -65,7 +65,7 @@ export async function findTaskWithRequirement(
   const requirements = await listRequirements(context)
 
   for (const requirement of requirements) {
-    const task = requirement.tasks.find((item) => item.id === taskId)
+    const task = findTaskInRequirement(requirement, taskId)
     if (task) {
       return {
         requirement,
@@ -75,4 +75,11 @@ export async function findTaskWithRequirement(
   }
 
   return undefined
+}
+
+export function findTaskInRequirement(
+  requirement: Requirement,
+  taskId: string,
+): Task | undefined {
+  return requirement.tasks.find((item) => item.id === taskId)
 }

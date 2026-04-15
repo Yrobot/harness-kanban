@@ -120,7 +120,7 @@ interface Requirement {
 
 /** 任务：AI 执行的最小单位，通过属性定义实现上下文管理策略 */
 interface Task {
-  id: TaskId; // 规则：t_xxxxxx，支持手动指定；未传时自动生成
+  id: TaskId; // 规则：t_000000，支持手动指定；未传时自动生成
   req_id: string;
   title: string;
 
@@ -261,6 +261,18 @@ npx -y @yrobot/harness-kanban --help
   - `<id>` (string): 需求 ID
 - 使用案例: `harness-kanban get-req 20260101120000`
 
+#### update-req
+
+- 介绍: 更新指定需求的信息（支持状态、标题、描述）
+- 参数解析:
+  - `<id>` (string): 需求 ID
+  - `--status` (string): 目标状态 (planning|developing|completed)
+  - `--title` (string): 需求标题
+  - `--description` (string): 需求描述
+- 使用案例:
+  - `harness-kanban update-req 20260101120000 --status developing`
+  - `harness-kanban update-req 20260101120000 --title "用户中心 V2" --description "补充用户资料与权限管理"`
+
 #### delete-req
 
 - 介绍: 级联删除需求及其下属的所有任务
@@ -274,7 +286,7 @@ npx -y @yrobot/harness-kanban --help
 
 - 介绍: 在指定需求下创建原子化的 AI 任务
 - 参数解析:
-  - `--id` (string): 任务 ID，格式 `t_xxxxxx`，支持手动指定；未传时自动生成
+  - `--id` (string): 任务 ID，格式 `t_000000`，支持手动指定；未传时自动生成
   - `--req` (string): 关联的需求 ID
   - `--title` (string): 任务名称
   - `--context` (string): 文件映射路径（数组字段，JSON 字符串或逗号分隔）
@@ -299,38 +311,42 @@ npx -y @yrobot/harness-kanban --help
 - 介绍: 精确获取单个任务的详细元数据和执行策略
 - 参数解析:
   - `<id>` (string): 任务 ID
-- 使用案例: `harness-kanban get-task t_000001`
+  - `--req` (string): 需求 ID
+- 使用案例: `harness-kanban get-task t_000001 --req 20260101120000`
 
 #### update-task
 
 - 介绍: 更新任务状态与任务字段，支持整体替换与增量操作（add/remove）
 - 参数解析:
   - `<id>` (string): 任务 ID
+  - `--req` (string): 需求 ID
   - `--status` (string): 目标状态 (todo|in_progress|done|blocked)
   - `--summary` (string): 供下游任务使用的结构化交付总结
   - `--set` (string): 对字段进行整体替换（对象字段，JSON 字符串）
   - `--add` (string): 对数组字段执行增量添加（对象字段，JSON 字符串）
   - `--remove` (string): 对数组字段执行增量删除（对象字段，JSON 字符串）
 - 使用案例:
-  - `harness-kanban update-task t_000001 --status done --summary "完成接口实现"`
-  - `harness-kanban update-task t_000001 --add "{\"dependencies\":[\"t_000000\"]}"`
-  - `harness-kanban update-task t_000001 --remove "{\"constraints\":[\"禁止修改接口\"]}"`
+  - `harness-kanban update-task t_000001 --req 20260101120000 --status done --summary “完成接口实现”`
+  - `harness-kanban update-task t_000001 --req 20260101120000 --add “{\”dependencies\”:[\”t_000000\”]}”`
+  - `harness-kanban update-task t_000001 --req 20260101120000 --remove “{\”constraints\”:[\”禁止修改接口\”]}”`
 
 #### get-task-prompt
 
 - 介绍: 核心指令。装配并生成高度收敛的标准化 Prompt，直接驱动 AI 工作
 - 参数解析:
   - `<id>` (string): 任务 ID
+  - `--req` (string): 需求 ID
 - 输出格式:
-  - markdown 格式结构化的 Prompt 模板（如“## 需求背景 / ## 当前任务 / ## 约束条件 / ## 输出要求 / ## 执行步骤 / ## 验证清单”）
-- 使用案例: `harness-kanban get-task-prompt t_000001`
+  - markdown 格式结构化的 Prompt 模板（如”## 需求背景 / ## 当前任务 / ## 约束条件 / ## 输出要求 / ## 执行步骤 / ## 验证清单”）
+- 使用案例: `harness-kanban get-task-prompt t_000001 --req 20260101120000`
 
 #### delete-task
 
 - 介绍: 从需求中移除特定任务
 - 参数解析:
   - `<id>` (string): 任务 ID
-- 使用案例: `harness-kanban delete-task t_000001`
+  - `--req` (string): 需求 ID
+- 使用案例: `harness-kanban delete-task t_000001 --req 20260101120000`
 
 ## 7. 工具特性
 
