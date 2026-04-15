@@ -15,6 +15,7 @@ import {
   updateReq,
   updateTask,
 } from "@/interface/index.js"
+import { formatError } from "@/core/errors.js"
 import type {
   CommandContext,
   UpdateTaskAddPayload,
@@ -39,6 +40,36 @@ export function asText(payload: unknown): { content: Array<{ type: "text"; text:
   }
 }
 
+type McpResult = {
+  content: Array<{ type: "text"; text: string }>
+  isError?: true
+}
+
+export function asError(error: unknown): McpResult {
+  return {
+    content: [
+      {
+        type: "text",
+        text: formatError(error),
+      },
+    ],
+    isError: true,
+  }
+}
+
+export function withErrorHandling<T extends readonly unknown[], R>(
+  handler: (...args: T) => Promise<R>,
+): (...args: T) => Promise<McpResult> {
+  return async (...args: T): Promise<McpResult> => {
+    try {
+      const result = await handler(...args)
+      return asText(result)
+    } catch (error) {
+      return asError(error)
+    }
+  }
+}
+
 export const server = new McpServer({
   name: "@yrobot/harness-kanban",
   version: "0.1.0",
@@ -52,7 +83,9 @@ server.tool(
     description: z.string().optional(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await createReq(input.title, { id: input.id, description: input.description }, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await createReq(input.title, { id: input.id, description: input.description }, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -61,7 +94,9 @@ server.tool(
     status: z.string().optional(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await listReq({ status: input.status }, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await listReq({ status: input.status }, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -70,7 +105,9 @@ server.tool(
     id: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await getReq(input.id, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await getReq(input.id, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -82,18 +119,17 @@ server.tool(
     description: z.string().optional(),
     global: z.boolean().optional(),
   },
-  async (input) =>
-    asText(
-      await updateReq(
-        input.id,
-        {
-          status: input.status,
-          title: input.title,
-          description: input.description,
-        },
-        getContext(input.global),
-      ),
+  withErrorHandling(
+    async (input) => await updateReq(
+      input.id,
+      {
+        status: input.status,
+        title: input.title,
+        description: input.description,
+      },
+      getContext(input.global),
     ),
+  ),
 )
 
 server.tool(
@@ -102,7 +138,9 @@ server.tool(
     id: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await deleteReq(input.id, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await deleteReq(input.id, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -118,22 +156,21 @@ server.tool(
     background: z.string().optional(),
     global: z.boolean().optional(),
   },
-  async (input) =>
-    asText(
-      await createTask(
-        {
-          id: input.id,
-          req: input.req,
-          title: input.title,
-          context: input.context,
-          tests: input.tests,
-          constraints: input.constraints,
-          dependencies: input.dependencies,
-          background: input.background,
-        },
-        getContext(input.global),
-      ),
+  withErrorHandling(
+    async (input) => await createTask(
+      {
+        id: input.id,
+        req: input.req,
+        title: input.title,
+        context: input.context,
+        tests: input.tests,
+        constraints: input.constraints,
+        dependencies: input.dependencies,
+        background: input.background,
+      },
+      getContext(input.global),
     ),
+  ),
 )
 
 server.tool(
@@ -143,7 +180,9 @@ server.tool(
     status: z.string().optional(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await listTask({ req: input.req, status: input.status }, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await listTask({ req: input.req, status: input.status }, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -153,9 +192,9 @@ server.tool(
     req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => ({
-    content: [{ type: "text", text: JSON.stringify(await getTask(input.id, input.req, getContext(input.global)), null, 2) }],
-  }),
+  withErrorHandling(
+    async (input) => await getTask(input.id, input.req, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -170,13 +209,13 @@ server.tool(
     remove: z.record(z.array(z.string())).optional(),
     global: z.boolean().optional(),
   },
-  async (input) => {
-    const setPayload = input.set as UpdateTaskSetPayload | undefined
-    const addPayload = input.add as UpdateTaskAddPayload | undefined
-    const removePayload = input.remove as UpdateTaskRemovePayload | undefined
+  withErrorHandling(
+    async (input) => {
+      const setPayload = input.set as UpdateTaskSetPayload | undefined
+      const addPayload = input.add as UpdateTaskAddPayload | undefined
+      const removePayload = input.remove as UpdateTaskRemovePayload | undefined
 
-    return asText(
-      await updateTask(
+      return await updateTask(
         input.id,
         input.req,
         {
@@ -187,9 +226,9 @@ server.tool(
           remove: removePayload,
         },
         getContext(input.global),
-      ),
-    )
-  },
+      )
+    },
+  ),
 )
 
 server.tool(
@@ -199,7 +238,9 @@ server.tool(
     req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => asText(await deleteTask(input.id, input.req, getContext(input.global))),
+  withErrorHandling(
+    async (input) => await deleteTask(input.id, input.req, getContext(input.global)),
+  ),
 )
 
 server.tool(
@@ -209,9 +250,9 @@ server.tool(
     req: z.string(),
     global: z.boolean().optional(),
   },
-  async (input) => ({
-    content: [{ type: "text", text: await getTaskPrompt(input.id, input.req, getContext(input.global)) }],
-  }),
+  withErrorHandling(
+    async (input) => await getTaskPrompt(input.id, input.req, getContext(input.global)),
+  ),
 )
 
 export async function startServer(): Promise<void> {
@@ -221,8 +262,7 @@ export async function startServer(): Promise<void> {
 
 if (import.meta.main) {
   startServer().catch((error) => {
-    const message = error instanceof Error ? error.message : "Unknown error"
-    process.stderr.write(`${message}\n`)
+    process.stderr.write(`${formatError(error)}\n`)
     process.exit(1)
   })
 }

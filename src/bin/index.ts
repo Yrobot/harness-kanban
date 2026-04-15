@@ -15,6 +15,7 @@ import {
   updateReq,
   updateTask,
 } from "@/interface/index.js"
+import { formatError } from "@/core/errors.js"
 import type {
   CommandContext,
   RequirementStatus,
@@ -279,13 +280,21 @@ export async function run(argvInput: string[] = hideBin(process.argv)): Promise<
     .alias("help", "h")
     .version()
     .alias("version", "v")
+    .fail((msg, err) => {
+      if (err) {
+        process.stderr.write(`${formatError(err)}\n`)
+      } else {
+        // For validation errors (missing commands/args), show yargs error message
+        process.stderr.write(`${msg}\n`)
+      }
+      process.exit(1)
+    })
     .parseAsync()
 }
 
 if (import.meta.main) {
   run().catch((error) => {
-    const message = error instanceof Error ? error.message : "Unknown error"
-    process.stderr.write(`${message}\n`)
+    process.stderr.write(`${formatError(error)}\n`)
     process.exit(1)
   })
 }

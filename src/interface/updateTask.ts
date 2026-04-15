@@ -68,7 +68,9 @@ export async function updateTask(
 ): Promise<Task> {
   assertTaskId(taskId)
 
-  const requirement = await readRequirement(context, reqId)
+  const requirement = await readRequirement(context, reqId).catch(() => {
+    throw new Error(`Requirement not found: ${reqId}`)
+  })
   const task = findTaskInRequirement(requirement, taskId)
   if (!task) {
     throw new Error(`Task not found: ${taskId}`)

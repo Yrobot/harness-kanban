@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test"
 
-import { asText, getContext, server } from "@/mcp/index.js"
+import { asText, asError, getContext, server, withErrorHandling } from "@/mcp/index.js"
 
 describe("mcp/index", () => {
   describe("getContext", () => {
@@ -26,6 +26,38 @@ describe("mcp/index", () => {
     it("handles string payloads", () => {
       const result = asText("plain text")
       expect(result.content[0].text).toBe(JSON.stringify("plain text", null, 2))
+    })
+  })
+
+  describe("asError", () => {
+    it("returns unified error format", () => {
+      const result = asError(new Error("Task not found: t_000001"))
+      expect(result.isError).toBe(true)
+      expect(result.content[0].text).toBe("[NOT_FOUND] Task not found: t_000001")
+    })
+
+    it("handles non-Error values", () => {
+      const result = asError(null)
+      expect(result.isError).toBe(true)
+      expect(result.content[0].text).toBe("[INTERNAL_ERROR] Unknown error")
+    })
+  })
+
+  describe("withErrorHandling", () => {
+    it("wraps successful handler with asText", async () => {
+      const handler = withErrorHandling(async () => ({ ok: true }))
+      const result = await handler()
+      expect(result.isError).toBeUndefined()
+      expect(result.content[0].text).toBe(JSON.stringify({ ok: true }, null, 2))
+    })
+
+    it("catches runtime errors and returns asError", async () => {
+      const handler = withErrorHandling(async () => {
+        throw new Error("Requirement not found: 20260101120000")
+      })
+      const result = await handler()
+      expect(result.isError).toBe(true)
+      expect(result.content[0].text).toBe("[NOT_FOUND] Requirement not found: 20260101120000")
     })
   })
 
@@ -180,6 +212,36 @@ describe("mcp/index", () => {
       it("accepts with req", () => {
         const parse = getTaskPromptTool.inputSchema.safeParse({ id: "t_000001", req: "20260101120000" })
         expect(parse.success).toBe(true)
+      })
+    })
+
+    describe("get-task runtime error", () => {
+      const getTaskTool = tools["get-task"] as {
+        handler: (input: unknown) => Promise<{
+          content: Array<{ type: "text"; text: string }>
+          isError?: true
+        }>
+      }
+
+      it("returns unified error for nonexistent task", async () => {
+        const result = await getTaskTool.handler({ id: "t_000001", req: "20260101120000" })
+        expect(result.isError).toBe(true)
+        expect(result.content[0].text).toContain("[NOT_FOUND]")
+      })
+    })
+
+    describe("list-task runtime error", () => {
+      const listTaskTool = tools["list-task"] as {
+        handler: (input: unknown) => Promise<{
+          content: Array<{ type: "text"; text: string }>
+          isError?: true
+        }>
+      }
+
+      it("returns unified error for nonexistent requirement", async () => {
+        const result = await listTaskTool.handler({ req: "20260101120000" })
+        expect(result.isError).toBe(true)
+        expect(result.content[0].text).toContain("[NOT_FOUND]")
       })
     })
   })

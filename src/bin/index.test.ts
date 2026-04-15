@@ -65,7 +65,21 @@ describe("bin/index", () => {
     ])
 
     expect(exitCode).toBe(1)
+    expect(stderr).toContain("[NOT_FOUND]")
     expect(stderr).toContain("Requirement not found: 20260101120000")
+  })
+
+  it("get-task on nonexistent req shows unified error", async () => {
+    const { stderr, exitCode } = await runCliAsync([
+      "get-task",
+      "t_000001",
+      "--req",
+      "20260101120000",
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("[NOT_FOUND]")
+    expect(stderr).toContain("Requirement not found")
   })
 
   it("strict() rejects unknown commands", async () => {
@@ -113,6 +127,6 @@ describe("bin/index", () => {
   it("no command shows usage", async () => {
     const { exitCode, stderr } = await runCliAsync([])
     expect(exitCode).toBe(1)
-    expect(stderr).toContain("Commands:")
+    expect(stderr).toContain("Not enough non-option arguments")
   })
 })

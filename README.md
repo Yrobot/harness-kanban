@@ -214,6 +214,19 @@ npx -y @yrobot/harness-kanban --help
 - CLI / MCP 必须共享同一参数语义、默认值、校验与行为
 - 例如：`create-task` 对应 `createTask`（并由 MCP 复用）
 
+### 6.0.1 错误输出格式
+
+CLI 和 MCP 在运行时发生错误时，会输出统一的错误格式：
+
+- **CLI 端**：错误信息输出到 `stderr`，格式为 `[CODE] message`，并返回 `exitCode=1`
+  - `[NOT_FOUND]`：需求或任务不存在
+  - `[ALREADY_EXISTS]`：尝试创建已存在的资源
+  - `[INVALID_INPUT]`：参数格式错误或缺失必填字段
+  - `[INVALID_JSON]`：JSON 参数解析失败
+  - `[INTERNAL_ERROR]`：其他未分类错误
+
+- **MCP 端**：工具返回结果中会包含 `isError: true` 标识，文本内容同样采用 `[CODE] message` 格式，便于 AI Agent 识别和处理
+
 ### 6.1 全局命令与配置 (Global)
 
 #### --help / -h
