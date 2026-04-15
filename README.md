@@ -9,6 +9,20 @@
 - **上下文载体**：它不仅存储管理任务，更用流程化的方式确保 AI 获取的上下文是高质量的，确保上下文在长链路交付中不失真、不腐败
 - **质量锚点**：通过 `get-task-prompt` 强制执行结构化提示词策略，将 AI 的执行逻辑收敛在预设的规范内，致力于让 AI 产出更稳定高质量的结果
 
+## 项目结构声明与约定
+
+为保证 CLI / MCP 行为一致、上下文能力可复用，项目采用分层约定：
+
+- `src/interface`：唯一对外业务能力层。所有命令能力只在此层暴露。
+- `src/bin`：CLI 胶水层。只做命令映射、参数解析、输出格式化，再调用 `src/interface`。
+- `src/mcp`：MCP 胶水层。只做 tool schema/input 解析与返回格式，再调用 `src/interface`。
+- `src/core`：领域模型、校验、存储等内部实现，不直接作为对外能力入口。
+- `src/utils`：纯函数通用能力（无 I/O、无全局可变状态依赖）。
+
+### interface 命名约定（与 CLI 命令一一对应）
+
+比如：`create-req` -> `src/interface/createReq.ts`
+
 ## 1. Harness Code 端到端流程
 
 ```mermaid
@@ -149,11 +163,34 @@ interface Task {
 
 **这是 AI 长时间稳定产出高质量结果的前提。**
 
-## 5. 接入方式
+## 5. 安装与使用
 
-### 5.1 MCP (Model Context Protocol)
+### 5.1 CLI 安装
 
-推荐在 Cursor, Windsurf 中接入，使 Agent 具备原生的“看板导航”与“上下文获取”技能
+#### 全局安装（推荐）
+
+```bash
+npm i -g @yrobot/harness-kanban
+# 或
+pnpm add -g @yrobot/harness-kanban
+```
+
+安装后可直接使用：
+
+```bash
+harness-kanban --help
+harness-kanban --version
+```
+
+#### 临时执行（免安装）
+
+```bash
+npx -y @yrobot/harness-kanban --help
+```
+
+### 5.2 MCP 接入
+
+推荐在 Cursor、Windsurf 等支持 MCP 的客户端中接入，使 Agent 具备原生的“看板导航”与“上下文获取”能力：
 
 ```json
 {
@@ -166,13 +203,6 @@ interface Task {
 }
 ```
 
-### 5.2 Skill + CLI
-
-```bash
-npm i -g @yrobot/harness-kanban
-
-harness-kanban --help
-```
 
 ## 6. CLI 指令参考
 

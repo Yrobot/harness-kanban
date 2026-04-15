@@ -54,7 +54,7 @@
 
 ### 类型规范
 
-- 必须确保代码 ts 类型安全，通过 tsc 类型校验
+- 必须确保代码 ts 类型安全，通过 `pnpm run ts-check` 检查
 - 严禁使用 any
 - 优先使用 interface 或 type
 - 善用泛型 (Generics)
