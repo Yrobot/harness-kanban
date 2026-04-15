@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Task management and context engineering tool for Harness Code workflows",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "harness-kanban": "dist/bin/index.js"
   },
