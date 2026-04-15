@@ -2,6 +2,7 @@
   "name": "@yrobot/harness-kanban",
   "version": "0.1.0",
   "description": "Task management and context engineering tool for Harness Code workflows",
+  "homepage": "https://github.com/Yrobot/harness-kanban",
   "type": "module",
   "publishConfig": {
     "access": "public"
