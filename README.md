@@ -68,7 +68,7 @@ sequenceDiagram
 
 See the full data model and type definitions:
 
-- `skills/harness-kanban/references/data-model.md` ([EN](skills/harness-kanban/references/data-model.md) | [中文](skills/harness-kanban/references/data-model.zh.md))
+- `skills/harness-kanban/references/data-model.md`
 
 Contains:
 
@@ -139,7 +139,7 @@ npx skills add https://github.com/Yrobot/harness-kanban
 - The Skill handles AI trigger logic and operation routing
 - The CLI handles deterministic execution
 - Project: `https://github.com/Yrobot/harness-kanban`
-- AI manual: `skills/harness-kanban/SKILL.md` ([EN](skills/harness-kanban/SKILL.md) | [中文](skills/harness-kanban/SKILL.zh.md))
+- AI manual: `skills/harness-kanban/SKILL.md`
 
 ## 6. CLI Reference
 
@@ -168,7 +168,7 @@ When runtime errors occur, CLI and MCP output a unified error format:
 
 Full command parameters and usage examples:
 
-- [commands.md](skills/harness-kanban/references/commands.md) ([EN](skills/harness-kanban/references/commands.md) | [中文](skills/harness-kanban/references/commands.zh.md))
+- [commands.md](skills/harness-kanban/references/commands.md)
 
 Covers:
 
