@@ -72,8 +72,9 @@ See the full data model and type definitions:
 
 Contains:
 
-- Complete TypeScript type definitions for `Requirement` / `Task`
+- Complete TypeScript type definitions for `Requirement` / `Task` / `RequirementSummary` / `TaskSummary`
 - Requirement storage structure example (`.harness-kanban/requirements/<req_id>/index.json`)
+- Summary vs full view: `list-req`/`list-task` return summaries; `get-req`/`get-task` return full details
 
 ## 4. Core Command: get-task-prompt
 

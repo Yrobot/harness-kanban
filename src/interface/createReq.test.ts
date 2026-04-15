@@ -35,6 +35,12 @@ describe("interface/createReq", () => {
 
     const listed = await listReq({}, { cwd })
     expect(listed).toHaveLength(1)
+    // list-req returns summary only, must not contain `tasks`
+    expect(listed[0]).not.toHaveProperty("tasks")
+    expect(listed[0]).toHaveProperty("id")
+    expect(listed[0]).toHaveProperty("title")
+    expect(listed[0]).toHaveProperty("description")
+    expect(listed[0]).toHaveProperty("status")
 
     const deleted = await deleteReq("20260101120000", { cwd })
     expect(deleted).toEqual({ id: "20260101120000", deleted: true })

@@ -15,12 +15,26 @@ export interface Task {
   result_summary?: string
 }
 
+export interface TaskSummary {
+  id: string
+  req_id: string
+  title: string
+  status: TaskStatus
+}
+
 export interface Requirement {
   id: string
   title: string
   description: string
   status: RequirementStatus
   tasks: Task[]
+}
+
+export interface RequirementSummary {
+  id: string
+  title: string
+  description: string
+  status: RequirementStatus
 }
 
 export interface CommandContext {

@@ -55,6 +55,35 @@ describe("interface/task", () => {
     expect(todoTasks).toHaveLength(0)
   })
 
+  it("listTask returns summary only (field boundary)", async () => {
+    await createTask(
+      {
+        req: "20260101120000",
+        title: "任务 B",
+        context: ["src/x/*"],
+        constraints: ["keep stable"],
+      },
+      { cwd },
+    )
+
+    const listed = await listTask({ req: "20260101120000" }, { cwd })
+    expect(listed.length).toBeGreaterThan(0)
+
+    const item = listed[0]
+    // Must have summary fields
+    expect(item).toHaveProperty("id")
+    expect(item).toHaveProperty("req_id")
+    expect(item).toHaveProperty("title")
+    expect(item).toHaveProperty("status")
+    // Must NOT have detail fields
+    expect(item).not.toHaveProperty("context_mapping")
+    expect(item).not.toHaveProperty("background_chunk")
+    expect(item).not.toHaveProperty("dependencies")
+    expect(item).not.toHaveProperty("constraints")
+    expect(item).not.toHaveProperty("verification_steps")
+    expect(item).not.toHaveProperty("result_summary")
+  })
+
   it("updates with set/add/remove", async () => {
     const created = await createTask(
       {

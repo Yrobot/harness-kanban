@@ -86,8 +86,9 @@ sequenceDiagram
 
 该文档包含：
 
-- `Requirement` / `Task` 完整 TypeScript 类型定义
+- `Requirement` / `Task` / `RequirementSummary` / `TaskSummary` 完整 TypeScript 类型定义
 - Requirement 存储结构示例（`.harness-kanban/requirements/<req_id>/index.json`）
+- 摘要视图与详情视图：`list-req`/`list-task` 返回摘要，`get-req`/`get-task` 返回完整详情
 
 ## 4. 核心指令：get-task-prompt
 

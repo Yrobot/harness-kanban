@@ -35,10 +35,13 @@ harness-kanban create-req "User Center" --id 20260101120000 --description "Handl
 
 ### list-req
 
-List requirements with optional status filter.
+List requirements (summary only).
 
 Parameters:
 - `--status` (string): `planning|developing|completed`
+
+Returns (summary view):
+- `id`, `title`, `description`, `status` (excludes `tasks`)
 
 Example:
 ```bash
@@ -51,6 +54,9 @@ Get a single requirement's details.
 
 Parameters:
 - `<id>` (string)
+
+Returns (full view):
+- All fields: `id`, `title`, `description`, `status`, `tasks[]`
 
 Example:
 ```bash
@@ -109,11 +115,14 @@ harness-kanban create-task --req 20260101120000 --title "API Development" --cont
 
 ### list-task
 
-List tasks under a requirement (with optional status filter).
+List tasks under a requirement (summary only).
 
 Parameters:
 - `--req` (string): Requirement ID (required)
 - `--status` (string): `todo|in_progress|done|blocked`
+
+Returns (summary view):
+- `id`, `req_id`, `title`, `status` (excludes `context_mapping`, `background_chunk`, `dependencies`, `constraints`, `verification_steps`, `result_summary`)
 
 Example:
 ```bash
@@ -127,6 +136,9 @@ Get a single task's details.
 Parameters:
 - `<id>` (string)
 - `--req` (string): Requirement ID (required)
+
+Returns (full view):
+- All fields: `id`, `req_id`, `title`, `context_mapping`, `background_chunk`, `dependencies`, `constraints`, `verification_steps`, `status`, `result_summary?`
 
 Example:
 ```bash
