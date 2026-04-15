@@ -21,13 +21,13 @@ import type {
   UpdateTaskSetPayload,
 } from "@/core/types.js"
 
-function getContext(global?: boolean): CommandContext {
+export function getContext(global?: boolean): CommandContext {
   return {
     global: global ?? false,
   }
 }
 
-function asText(payload: unknown): { content: Array<{ type: "text"; text: string }> } {
+export function asText(payload: unknown): { content: Array<{ type: "text"; text: string }> } {
   return {
     content: [
       {
@@ -38,7 +38,7 @@ function asText(payload: unknown): { content: Array<{ type: "text"; text: string
   }
 }
 
-const server = new McpServer({
+export const server = new McpServer({
   name: "@yrobot/harness-kanban",
   version: "0.1.0",
 })
@@ -181,13 +181,15 @@ server.tool(
   async (input) => asText(await getTaskPrompt(input.id, getContext(input.global))),
 )
 
-async function startServer(): Promise<void> {
+export async function startServer(): Promise<void> {
   const transport = new StdioServerTransport()
   await server.connect(transport)
 }
 
-startServer().catch((error) => {
-  const message = error instanceof Error ? error.message : "Unknown error"
-  process.stderr.write(`${message}\n`)
-  process.exit(1)
-})
+if (import.meta.main) {
+  startServer().catch((error) => {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    process.stderr.write(`${message}\n`)
+    process.exit(1)
+  })
+}

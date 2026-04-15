@@ -62,8 +62,8 @@ function getOptionalStatus(argv: AnyArgv): TaskStatus | undefined {
   return status as TaskStatus
 }
 
-async function run(): Promise<void> {
-  await yargs(hideBin(process.argv))
+export async function run(argvInput: string[] = hideBin(process.argv)): Promise<void> {
+  await yargs(argvInput)
     .scriptName("harness-kanban")
     .option("global", {
       alias: "g",
@@ -237,8 +237,10 @@ async function run(): Promise<void> {
     .parseAsync()
 }
 
-run().catch((error) => {
-  const message = error instanceof Error ? error.message : "Unknown error"
-  process.stderr.write(`${message}\n`)
-  process.exit(1)
-})
+if (import.meta.main) {
+  run().catch((error) => {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    process.stderr.write(`${message}\n`)
+    process.exit(1)
+  })
+}
