@@ -1,196 +1,120 @@
 # @yrobot/harness-kanban
 
-`@yrobot/harness-kanban` 是一个专为 Harness Code (AI 驱动开发) 场景设计的任务管理与上下文工程工具
+**English** | [中文](README.zh.md)
 
-### 工具角色与作用
+`@yrobot/harness-kanban` is a task management and context engineering tool designed for Harness Code (AI-driven development) workflows.
 
-在 Harness Code 流程中，harness-kanban 是确保 AI 长期稳定产出的“信息基石”，其核心是：**任务管理 + 上下文工程**
+### Role and Purpose
 
-- **上下文载体**：它不仅存储管理任务，更用流程化的方式确保 AI 获取的上下文是高质量的，确保上下文在长链路交付中不失真、不腐败
-- **质量锚点**：通过 `get-task-prompt` 强制执行结构化提示词策略，将 AI 的执行逻辑收敛在预设的规范内，致力于让 AI 产出更稳定高质量的结果
+In the Harness Code workflow, harness-kanban is the "information cornerstone" that ensures long-term stable AI output. Its core is: **task management + context engineering**.
 
-## 项目结构声明与约定
+- **Context carrier**: It not only stores and manages tasks, but ensures AI receives high-quality context through a process-driven approach — preventing context distortion or decay across long delivery chains.
+- **Quality anchor**: By enforcing structured prompt strategies through `get-task-prompt`, it converges AI execution logic into predefined specifications, delivering more stable and higher-quality results.
 
-为保证 CLI / MCP 行为一致、上下文能力可复用，项目采用分层约定：
-
-- `src/interface`：唯一对外业务能力层。所有命令能力只在此层暴露。
-- `src/bin`：CLI 胶水层。只做命令映射、参数解析、输出格式化，再调用 `src/interface`。
-- `src/mcp`：MCP 胶水层。只做 tool schema/input 解析与返回格式，再调用 `src/interface`。
-- `src/core`：领域模型、校验、存储等内部实现，不直接作为对外能力入口。
-- `src/utils`：纯函数通用能力（无 I/O、无全局可变状态依赖）。
-
-### interface 命名约定（与 CLI 命令一一对应）
-
-比如：`create-req` -> `src/interface/createReq.ts`
-
-## 1. Harness Code 端到端流程
+## 1. End-to-End Harness Code Workflow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Human as 开发者
-    participant Agent as Harness Code Agent（主控）
-    participant Kanban as harness-kanban（CLI/MCP）
+    participant Human as Developer
+    participant Agent as Harness Code Agent (Controller)
+    participant Kanban as harness-kanban (CLI/MCP)
     participant Store as .harness-kanban/requirements/<req_id>/index.json
 
-    Human->>Agent: 提交需求目标与约束
+    Human->>Agent: Submit requirement goals and constraints
 
     Agent->>Kanban: create-req / create-task
-    Kanban->>Store: 写入 Requirement + tasks（方案 B）
+    Kanban->>Store: Write Requirement + tasks (Scheme B)
 
-    loop 任务推进循环
-        Agent->>Kanban: list-task（按 req / status）
-        Kanban->>Store: 读取任务简表（渐进式披露）
-        Kanban-->>Agent: 返回候选任务
+    loop Task Progression Cycle
+        Agent->>Kanban: list-task (by req / status)
+        Kanban->>Store: Read task summary (progressive disclosure)
+        Kanban-->>Agent: Return candidate tasks
 
         Agent->>Kanban: get-task / get-task-prompt
-        Kanban->>Store: 读取任务详情 + 依赖 result_summary
-        Kanban-->>Agent: 返回可执行上下文（标准化 Prompt）
+        Kanban->>Store: Read task details + dependency result_summary
+        Kanban-->>Agent: Return executable context (standardized prompt)
 
-        Agent->>Agent: 基于上下文执行实现与验证
+        Agent->>Agent: Execute implementation and verification based on context
 
-        Agent->>Kanban: update-task（status/summary/set/add/remove）
-        Kanban->>Store: 更新任务状态与上下文产物
+        Agent->>Kanban: update-task (status/summary/set/add/remove)
+        Kanban->>Store: Update task status and context artifacts
     end
 
-    Agent-->>Human: 汇报阶段结果与整体进度
+    Agent-->>Human: Report phase results and overall progress
 ```
 
-## 2. 核心策略：AI 上下文优化
+## 2. Core Strategy: AI Context Optimization
 
-`harness-kanban` 深度集成了各种 AI 上下文管理的最优范式，确保 Agent 在处理复杂项目时依然保持极高的稳定性
+`harness-kanban` deeply integrates AI context management best practices to ensure the Agent maintains high stability when handling complex projects.
 
-### 2.1 上下文管理策略 (Context Management)
+### 2.1 Context Management
 
-- **渐进式披露 (Progressive Disclosure)**： 支持 Agent 分层获取信息。Agent 首先通过 `list-task` 检索任务流（仅包含标题与简介）进行任务导航；只有在选定目标后，才通过 `get-task` 或 `get-task-prompt` 提取该任务的约束、文件映射及依赖产物。**避免全量任务数据一次性涌入，造成 Context Window 的信噪比下降。**
+- **Progressive Disclosure**: Agent first retrieves the task flow via `list-task` (titles and summaries only) for navigation. Only after selecting a target does it extract constraints, file mappings, and dependency artifacts via `get-task` or `get-task-prompt`. **Avoids flooding the Context Window with low-signal data.**
 
-- **上下文剪枝 (Context Pruning)**： 利用 `context_mapping` 显式限定 Agent 的感知边界。通过指令强制 AI 只关注特定代码分片，剪掉不相关的模块干扰
+- **Context Pruning**: Uses `context_mapping` to explicitly bound the Agent's perception. Forces AI to focus on specific code slices, pruning unrelated modules.
 
-- **上下文压缩与精简 (Context Compression)**： 将庞大的需求文档提炼为 `background_chunk`，将复杂的代码变动总结为结构化的 `result_summary`。在任务链条中，只传递“知识的精华”，而非“过程的废话”
+- **Context Compression**: Distills large requirement documents into `background_chunk` and complex code changes into structured `result_summary`. Only passes "knowledge essence" through the task chain.
 
-- **任务结构化分解 (Structured Decomposition)**： 将研发任务强制拆解为包含：**约束条件 (Constraints)**、**上下文映射 (Context)**、**量化验收 (Verification)** 的标准对象
+- **Structured Decomposition**: Forces development tasks into standard objects containing: **Constraints**, **Context Mapping**, and **Quantified Verification**.
 
-### 2.2 执行稳定性策略 (Reliability Engineering)
+### 2.2 Reliability Engineering
 
-- **确定性 Prompt 生成 (Deterministic Prompting)**： `get-task-prompt` 采用固定的算法逻辑拼装指令。它将任务元数据通过结构化模板封包，确保无论 AI 状态如何波动，接收到的“入参指令”永远是标准格式
+- **Deterministic Prompting**: `get-task-prompt` assembles instructions using fixed algorithmic logic. Task metadata is packaged via a structured template, ensuring the "input command" is always standard regardless of AI state fluctuations.
 
-- **逻辑与智能剥离**： 底层任务调度和数据管理由 100% 确定性的 Node/TS 代码实现。工具本身不具备随机性，只为 AI 提供最稳固的脚手架
+- **Logic vs Intelligence Separation**: Task scheduling and data management are implemented in 100% deterministic Node/TS code. The tool itself has no randomness — it provides the most stable scaffolding for AI.
 
-## 3. 数据模型设计
+## 3. Data Model
 
-### 3.1 Requirement 存储结构
+See the full data model and type definitions:
 
-每个 requirement 目录下仅有一个 `index.json`，用于存储该 Requirement 的完整数据。
+- `skills/harness-kanban/references/data-model.md` ([EN](skills/harness-kanban/references/data-model.md) | [中文](skills/harness-kanban/references/data-model.zh.md))
 
-- 存储路径示例：`.harness-kanban/requirements/<req_id>/index.json`
-- 结构方案：
+Contains:
 
-```json
-{
-  "id": "20260101120000",
-  "title": "用户中心",
-  "description": "处理登录注册",
-  "status": "developing",
-  "tasks": [
-    {
-      "id": "t_000001",
-      "title": "API 开发",
-      "context_mapping": ["src/api/*"],
-      "background_chunk": "...",
-      "dependencies": [],
-      "constraints": [],
-      "verification_steps": [],
-      "status": "todo"
-    }
-  ]
-}
-```
+- Complete TypeScript type definitions for `Requirement` / `Task`
+- Requirement storage structure example (`.harness-kanban/requirements/<req_id>/index.json`)
 
-### 3.2 核心类型定义 (TypeScript)
+## 4. Core Command: get-task-prompt
 
-```ts
-/** 需求：定义一个功能的整体边界 */
-interface Requirement {
-  id: ReqId; // 唯一标识，格式为 YYYYMMDDHHmmss，同 Requirement 文件夹名
-  title: string;
-  description: string;
-  status: "planning" | "developing" | "completed";
-  tasks: Task[]; // 任务以内嵌数组方式存储
-}
+This is the key command — the execution engine for **context convergence**.
 
-/** 任务：AI 执行的最小单位，通过属性定义实现上下文管理策略 */
-interface Task {
-  id: TaskId; // 规则：t_000000，支持手动指定；未传时自动生成
-  req_id: string;
-  title: string;
+**Why it matters**: If AI reads the kanban JSON directly, it may get distracted by redundant task info. `get-task-prompt` performs:
 
-  // --- 策略维度：上下文剪枝 (Context Pruning) ---
-  /** 明确 Agent 必须加载和感知的代码路径 */
-  context_mapping: string[];
+1. **Auto-resolves dependencies**: Looks up `result_summary` from tasks in `dependencies`
+2. **Assembles structured prompt**: Follows the golden standard of `Role → Context → Constraints → Output Requirements → Steps → Validations`
+3. **Structured output**: A standardized prompt template (e.g., "## Background / ## Current Task / ## Constraints / ## Output Requirements / ## Steps / ## Validation Checklist") — stable and progressive
 
-  // --- 策略维度：上下文压缩 (Context Compression) ---
-  /** 经过人工或 Agent 精简后的任务背景 */
-  background_chunk: string;
+**This is the prerequisite for long-term stable high-quality AI output.**
 
-  // --- 策略维度：渐进式披露 (Progressive Disclosure) ---
-  /** 任务依赖链，用于在 Prompt 装配时注入所需上下文 */
-  dependencies: string[];
+## 5. Installation and Usage
 
-  // --- 策略维度：任务结构化分解 (Structured Decomposition) ---
-  /** 显式执行约束，收敛 AI 行为 */
-  constraints: string[];
+### 5.1 CLI Installation
 
-  /** 量化验收步骤，定义可量化的验收标准 */
-  verification_steps: string[];
-
-  // --- 状态与产出 ---
-  status: "todo" | "in_progress" | "done" | "blocked";
-
-  /** 交付摘要：该任务产出的结构化总结，将作为下游任务的上下文 */
-  result_summary?: string;
-}
-```
-
-## 4. 核心指令：get-task-prompt
-
-这是 `harness-kanban` 很关键的命令，它是实现 **“上下文收敛”** 的具体执行引擎
-
-**为什么它很重要？** 如果直接让 AI 读看板 JSON，它可能会被冗余的任务信息干扰。`get-task-prompt` 会执行以下逻辑：
-
-1.  **自动检索依赖**：寻找 `dependencies` 中的 `result_summary`
-2.  **装配结构化 Prompt**：按照 `Role -> Context -> Constraints -> Output Requirements -> Steps -> Validations` 的黄金标准拼装
-3.  **结构化输出**：结构化的 Prompt 模板（如“## 需求背景 / ## 当前任务 / ## 约束条件 / ## 输出要求 / ## 执行步骤 / ## 验证清单”），确保输出的指令是稳定的、渐进式的
-
-**这是 AI 长时间稳定产出高质量结果的前提。**
-
-## 5. 安装与使用
-
-### 5.1 CLI 安装
-
-#### 全局安装（推荐）
+#### Global install (recommended)
 
 ```bash
 npm i -g @yrobot/harness-kanban
-# 或
+# or
 pnpm add -g @yrobot/harness-kanban
 ```
 
-安装后可直接使用：
+Then use directly:
 
 ```bash
 harness-kanban --help
 harness-kanban --version
 ```
 
-#### 临时执行（免安装）
+#### One-off execution (no install)
 
 ```bash
 npx -y @yrobot/harness-kanban --help
 ```
 
-### 5.2 MCP 接入
+### 5.2 MCP Integration
 
-推荐在 Cursor、Windsurf 等支持 MCP 的客户端中接入，使 Agent 具备原生的“看板导航”与“上下文获取”能力：
+Recommended to integrate in MCP-supporting clients (Cursor, Windsurf, etc.) to give the Agent native "kanban navigation" and "context retrieval" capabilities:
 
 ```json
 {
@@ -203,168 +127,58 @@ npx -y @yrobot/harness-kanban --help
 }
 ```
 
+### 5.3 Skill Installation
 
-## 6. CLI 指令参考
+Install the project Skill:
 
-命令格式：`harness-kanban [action-resource] [...props]`
+```bash
+npx skills add https://github.com/Yrobot/harness-kanban
+```
 
-### 6.0 CLI 与 MCP 一致性原则
+- The Skill handles AI trigger logic and operation routing
+- The CLI handles deterministic execution
+- Project: `https://github.com/Yrobot/harness-kanban`
+- AI manual: `skills/harness-kanban/SKILL.md` ([EN](skills/harness-kanban/SKILL.md) | [中文](skills/harness-kanban/SKILL.zh.md))
 
-- 每个 CLI 命令对应同名核心函数，并暴露给 MCP
-- CLI / MCP 必须共享同一参数语义、默认值、校验与行为
-- 例如：`create-task` 对应 `createTask`（并由 MCP 复用）
+## 6. CLI Reference
 
-### 6.0.1 错误输出格式
+Command format: `harness-kanban [action-resource] [...props]`
 
-CLI 和 MCP 在运行时发生错误时，会输出统一的错误格式：
+### 6.0 CLI and MCP Consistency
 
-- **CLI 端**：错误信息输出到 `stderr`，格式为 `[CODE] message`，并返回 `exitCode=1`
-  - `[NOT_FOUND]`：需求或任务不存在
-  - `[ALREADY_EXISTS]`：尝试创建已存在的资源
-  - `[INVALID_INPUT]`：参数格式错误或缺失必填字段
-  - `[INVALID_JSON]`：JSON 参数解析失败
-  - `[INTERNAL_ERROR]`：其他未分类错误
+- Each CLI command maps to a same-named core function, exposed to MCP
+- CLI / MCP share the same parameter semantics, defaults, validation, and behavior
+- Example: `create-task` maps to `createTask` (reused by MCP)
 
-- **MCP 端**：工具返回结果中会包含 `isError: true` 标识，文本内容同样采用 `[CODE] message` 格式，便于 AI Agent 识别和处理
+### 6.0.1 Error Output Format
 
-### 6.1 全局命令与配置 (Global)
+When runtime errors occur, CLI and MCP output a unified error format:
 
-#### --help / -h
+- **CLI**: Errors output to `stderr` as `[CODE] message`, with `exitCode=1`
+  - `[NOT_FOUND]`: Requirement or task does not exist
+  - `[ALREADY_EXISTS]`: Attempting to create an already-existing resource
+  - `[INVALID_INPUT]`: Parameter format error or missing required fields
+  - `[INVALID_JSON]`: JSON parameter parsing failed
+  - `[INTERNAL_ERROR]`: Other uncategorized errors
 
-- 介绍: 显示帮助信息，列出所有可用指令及说明
-- 使用案例: `harness-kanban --help`
+- **MCP**: Tool return includes `isError: true`, text content also uses `[CODE] message` format for AI Agent recognition
 
-#### --version / -v
+### 6.1 Command Parameters and Examples
 
-- 介绍: 查看当前安装的工具版本
-- 使用案例: `harness-kanban --version`
+Full command parameters and usage examples:
 
-#### --global / -g
+- [commands.md](skills/harness-kanban/references/commands.md) ([EN](skills/harness-kanban/references/commands.md) | [中文](skills/harness-kanban/references/commands.zh.md))
 
-- 介绍: 全局通用标识位。启用后，所有指令将操作用户主目录下的全局存储（`~/.harness-kanban`）
-- 使用案例: `harness-kanban list-req --global`
+Covers:
 
-#### 通用参数语义补充
+- All Requirement / Task commands
+- Global parameters and array/object field passing semantics
+- Common CLI invocation examples
 
-- CLI 数组字段传参：默认使用 JSON 字符串，同时兼容逗号分隔
-- CLI 对象字段传参：统一使用 JSON 字符串
+## 7. Features
 
-### 6.2 Requirement (req) 管理
+**Ultimate Stability**: Implemented in Node/TS — no AI logic judgments. Every line of prompt and every state change provided by this tool is 100% controllable.
 
-#### create-req
+**Git-Driven Sync**: Data travels with code. Through the `.harness-kanban` folder, human developers can review AI task states and context management logic just like reviewing code.
 
-- 介绍: 初始化一个开发需求
-- 参数解析:
-  - `<title>` (string): 需求名称
-  - `--id` (string): 唯一标识符（格式 YYYYMMDDHHmmss）
-  - `--description` (string): 需求的详细业务背景
-- 使用案例: `harness-kanban create-req "用户中心" --id 20260101120000 --description "处理登录注册"`
-
-#### list-req
-
-- 介绍: 展示需求列表，支持按状态过滤，作为 Agent 导航的第一层
-- 参数解析:
-  - `--status` (string): 状态过滤 (planning|developing|completed)
-- 使用案例: `harness-kanban list-req --status developing`
-
-#### get-req
-
-- 介绍: 查询指定需求的完整信息及其内嵌任务列表
-- 参数解析:
-  - `<id>` (string): 需求 ID
-- 使用案例: `harness-kanban get-req 20260101120000`
-
-#### update-req
-
-- 介绍: 更新指定需求的信息（支持状态、标题、描述）
-- 参数解析:
-  - `<id>` (string): 需求 ID
-  - `--status` (string): 目标状态 (planning|developing|completed)
-  - `--title` (string): 需求标题
-  - `--description` (string): 需求描述
-- 使用案例:
-  - `harness-kanban update-req 20260101120000 --status developing`
-  - `harness-kanban update-req 20260101120000 --title "用户中心 V2" --description "补充用户资料与权限管理"`
-
-#### delete-req
-
-- 介绍: 级联删除需求及其下属的所有任务
-- 参数解析:
-  - `<id>` (string): 需求 ID
-- 使用案例: `harness-kanban delete-req 20260101120000`
-
-### 6.3 Task 管理
-
-#### create-task
-
-- 介绍: 在指定需求下创建原子化的 AI 任务
-- 参数解析:
-  - `--id` (string): 任务 ID，格式 `t_000000`，支持手动指定；未传时自动生成
-  - `--req` (string): 关联的需求 ID
-  - `--title` (string): 任务名称
-  - `--context` (string): 文件映射路径（数组字段，JSON 字符串或逗号分隔）
-  - `--tests` (string): 校验命令（数组字段，JSON 字符串或逗号分隔）
-  - `--constraints` (string): 执行约束（数组字段，JSON 字符串或逗号分隔）
-  - `--dependencies` (string): 依赖任务 ID（数组字段，JSON 字符串或逗号分隔）
-  - `--background` (string): 任务背景摘要
-- 使用案例:
-  - `harness-kanban create-task --req 20260101120000 --title "API 开发" --context "[\"src/api/*\"]" --tests "[\"bun test\"]"`
-  - `harness-kanban create-task --req 20260101120000 --title "API 开发" --context "src/api/*,src/shared/*"`
-
-#### list-task
-
-- 介绍: 渐进式披露：获取特定需求下的任务简要列表，用于 Agent 执行路径规划
-- 参数解析:
-  - `--req` (string): 需求 ID
-  - `--status` (string): 状态过滤 (todo|in_progress|done|blocked)
-- 使用案例: `harness-kanban list-task --req 20260101120000 --status todo`
-
-#### get-task
-
-- 介绍: 精确获取单个任务的详细元数据和执行策略
-- 参数解析:
-  - `<id>` (string): 任务 ID
-  - `--req` (string): 需求 ID
-- 使用案例: `harness-kanban get-task t_000001 --req 20260101120000`
-
-#### update-task
-
-- 介绍: 更新任务状态与任务字段，支持整体替换与增量操作（add/remove）
-- 参数解析:
-  - `<id>` (string): 任务 ID
-  - `--req` (string): 需求 ID
-  - `--status` (string): 目标状态 (todo|in_progress|done|blocked)
-  - `--summary` (string): 供下游任务使用的结构化交付总结
-  - `--set` (string): 对字段进行整体替换（对象字段，JSON 字符串）
-  - `--add` (string): 对数组字段执行增量添加（对象字段，JSON 字符串）
-  - `--remove` (string): 对数组字段执行增量删除（对象字段，JSON 字符串）
-- 使用案例:
-  - `harness-kanban update-task t_000001 --req 20260101120000 --status done --summary “完成接口实现”`
-  - `harness-kanban update-task t_000001 --req 20260101120000 --add “{\”dependencies\”:[\”t_000000\”]}”`
-  - `harness-kanban update-task t_000001 --req 20260101120000 --remove “{\”constraints\”:[\”禁止修改接口\”]}”`
-
-#### get-task-prompt
-
-- 介绍: 核心指令。装配并生成高度收敛的标准化 Prompt，直接驱动 AI 工作
-- 参数解析:
-  - `<id>` (string): 任务 ID
-  - `--req` (string): 需求 ID
-- 输出格式:
-  - markdown 格式结构化的 Prompt 模板（如”## 需求背景 / ## 当前任务 / ## 约束条件 / ## 输出要求 / ## 执行步骤 / ## 验证清单”）
-- 使用案例: `harness-kanban get-task-prompt t_000001 --req 20260101120000`
-
-#### delete-task
-
-- 介绍: 从需求中移除特定任务
-- 参数解析:
-  - `<id>` (string): 任务 ID
-  - `--req` (string): 需求 ID
-- 使用案例: `harness-kanban delete-task t_000001 --req 20260101120000`
-
-## 7. 工具特性
-
-**极致稳定性**：由 Node/TS 编码实现，不依赖 AI 进行逻辑判断。作为底层工具，它提供的每一行 Prompt、每一个状态变更都是 100% 可控的
-
-**Git 驱动同步**：数据随代码走。通过 .harness-kanban 文件夹，人类开发者可以像 Review 代码一样 Review AI 的任务状态和上下文管理逻辑
-
-**零配置启动**：无需复杂的数据库环境，支持局部（项目内）与全局（~/.harness-kanban）存储无缝切换
+**Zero-Config Startup**: No complex database environment needed. Supports seamless switching between local (in-project) and global (`~/.harness-kanban`) storage.
